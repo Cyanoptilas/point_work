@@ -1,143 +1,72 @@
-# https://www.oddspark.com/
+import os
+from playwright.sync_api import sync_playwright
+
 def io_money_oddspark(id, password, confirmPass, amount):
-    # 待機時間
-    from time import sleep
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
 
-    # Selenium
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
+        # ======================================================
+        # オッズパーク ログイン処理
+        # ======================================================
+        page.goto('https://www.oddspark.com/')
+        page.wait_for_timeout(2000)
 
-    # オプションの設定
-    options = webdriver.ChromeOptions()
+        page.fill('[name="SSO_ACCOUNTID"]', id)
+        page.fill('[name="SSO_PASSWORD"]', password)
+        page.click('#btn_login')
+        page.wait_for_timeout(2000)
 
-    # Chromeプロファイルの指定
-    options.add_argument("--user-data-dir=/Users/<ユーザ名>/Library/Application Support/Google/Chrome")
+        # 追加認証
+        page.fill('[name="INPUT_PIN"]', confirmPass)
+        page.click('[name="送信"]')
+        page.wait_for_timeout(2000)
 
-    # Selenium実行後もChromeを開いたままにする
-    options.add_experimental_option('detach', False)
+        # ======================================================
+        # 振込指示処理
+        # ======================================================
 
-    # ポップアップウィンドウの許可設定
-    options.add_argument('--disable-popup-blocking')
+        # 入金・精算ボタン押下（ポップアップ対応）
+        with context.expect_page() as new_page_info:
+            page.click('/html/body/div[1]/div[1]/div/ul[2]/li[6]/a')
+        popup = new_page_info.value
+        popup.wait_for_load_state()
 
-    # ======================================================
-    # オッズパーク ログイン処理
-    # ======================================================
+        # 入金するボタン
+        popup.click('//*[@id="leftNyukinMenu"]/ul[1]/li/a')
 
-    # Chromeブラウザを開く
-    driver = webdriver.Chrome()
+        # 入金額入力
+        popup.fill('[name="nyukin"]', str(amount))
+        popup.click('//*[@id="confirm"]/li[2]/a')
+        popup.wait_for_timeout(2000)
 
-    # 指定のURLを開く
-    url_top = 'https://www.oddspark.com/'
-    driver.get(url_top)
+        # 暗証番号入力 → 入金実行
+        popup.fill('[name="touhyoPassword"]', confirmPass)
+        popup.click('//*[@id="confirm"]/li[2]/a')
+        popup.wait_for_timeout(2000)
+        popup.close()
 
-    sleep(2)
+        # 精算処理
+        with context.expect_page() as new_page_info:
+            page.click('/html/body/div[1]/div[1]/div/ul[2]/li[6]/a')
+        popup2 = new_page_info.value
+        popup2.wait_for_load_state()
 
-    # ユーザ名入力
-    user_id = id
-    login_user_id = driver.find_element(By.NAME, 'SSO_ACCOUNTID')
-    login_user_id.send_keys(user_id)
+        popup2.click('/html/body/div[1]/div[2]/div/div[2]/ul[2]/li/a')
+        popup2.wait_for_timeout(2000)
 
-    # ログインパスワード入力
-    password = password
-    login_user_password = driver.find_element(By.NAME, 'SSO_PASSWORD')
-    login_user_password.send_keys(password)
+        popup2.fill('[name="touhyoPassword"]', confirmPass)
+        popup2.click('//*[@id="confirm"]/li[2]/a')
+        popup2.wait_for_timeout(3000)
 
-    # ログインボタン押下
-    login_btn = driver.find_element(By.ID, 'btn_login')
-    login_btn.click()
+        browser.close()
+        print("処理完了")
 
-    sleep(2)
-
-    # ページ遷移後
-    # 追加認証 パスワード入力
-    additional_password = confirmPass
-    additional_password_form = driver.find_element(By.NAME, 'INPUT_PIN')
-    additional_password_form.send_keys(additional_password)
-
-    # 確認ボタン押下
-    login_btn = driver.find_element(By.NAME, '送信')
-    login_btn.click()
-
-
-    # ======================================================
-    # 振込指示処理
-    # ======================================================
-
-    # 入金・精算ボタンを押下
-    xpath_payment_btn = '/html/body/div[1]/div[1]/div/ul[2]/li[6]/a'
-    payment = driver.find_element(By.XPATH, xpath_payment_btn)
-    driver.execute_script("arguments[0].click();", payment)
-
-    sleep(2)
-
-    # ウィンドウを切り替える
-    handle_array = driver.window_handles
-    driver.switch_to.window(handle_array[1])
-
-    # 入金するボタンを押下
-    xpath_input_money_btn = '//*[@id="leftNyukinMenu"]/ul[1]/li/a'
-    payment = driver.find_element(By.XPATH, xpath_input_money_btn)
-    payment.click()
-
-    # 入金額を入力
-    payment_amount = amount
-    payment_amount_form = driver.find_element(By.NAME, 'nyukin')
-    payment_amount_form.send_keys(payment_amount)
-
-    # 次へボタンを押下
-    next_btn = '//*[@id="confirm"]/li[2]/a'
-    next = driver.find_element(By.XPATH, next_btn)
-    next.click()
-
-    sleep(2)
-
-    # ページ遷移後
-    # 暗証番号入力
-    pin_password = confirmPass
-    pin_password_form = driver.find_element(By.NAME, 'touhyoPassword')
-    pin_password_form.send_keys(pin_password)
-
-    # 入金ボタンを押下
-    xpath_input_money_btn = '//*[@id="confirm"]/li[2]/a'
-    payment = driver.find_element(By.XPATH, xpath_input_money_btn)
-    payment.click()
-
-    sleep(2)
-
-    driver.close()
-
-    # ウィンドウを切り替える
-    handle_array = driver.window_handles
-    driver.switch_to.window(handle_array[0])
-
-    # 入金・精算ボタンを押下
-    xpath_payment_btn = '/html/body/div[1]/div[1]/div/ul[2]/li[6]/a'
-    payment = driver.find_element(By.XPATH, xpath_payment_btn)
-    driver.execute_script("arguments[0].click();", payment)
-
-    sleep(2)
-
-    # ウィンドウを切り替える
-    handle_array = driver.window_handles
-    driver.switch_to.window(handle_array[1])
-
-    # 精算するボタンを押下
-    xpath_pull_money_btn = '/html/body/div[1]/div[2]/div/div[2]/ul[2]/li/a'
-    pull_money_btn = driver.find_element(By.XPATH, xpath_pull_money_btn)
-    pull_money_btn.click()
-
-    sleep(2)
-
-    # ページ遷移後
-    # 暗証番号入力
-    pin_password = confirmPass
-    pin_password_form = driver.find_element(By.NAME, 'touhyoPassword')
-    pin_password_form.send_keys(pin_password)
-
-    # 精算ボタンを押下
-    xpath_output_money_btn = '//*[@id="confirm"]/li[2]/a'
-    output_money_btn = driver.find_element(By.XPATH, xpath_output_money_btn)
-    output_money_btn.click()
-
-    sleep(3)
-    driver.quit()
+if __name__ == "__main__":
+    io_money_oddspark(
+        id=os.getenv("SITE_ID"),
+        password=os.getenv("SITE_PASSWORD"),
+        confirmPass=os.getenv("SITE_PIN"),
+        amount=os.getenv("SITE_AMOUNT")
+    )
