@@ -1,0 +1,31 @@
+name: OddsPark Monthly Task
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # 毎月1日 9:00 JST
+  workflow_dispatch:      # 手動実行ボタン
+
+jobs:
+  run-task:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Run task
+        env:
+          SITE_ID: ${{ secrets.SITE_ID }}
+          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+          SITE_PIN: ${{ secrets.SITE_PIN }}
+          SITE_AMOUNT: ${{ secrets.SITE_AMOUNT }}
+        run: python task.py
