@@ -24,8 +24,11 @@ jobs:
 
       - name: Run task
         env:
-          SITE_ID: ${{ secrets.SITE_ID }}
-          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
-          SITE_PIN: ${{ secrets.SITE_PIN }}
-          SITE_AMOUNT: ${{ secrets.SITE_AMOUNT }}
+          SITE_ID_1: ${{ secrets.SITE_ID_1 }}
+          SITE_PASSWORD_1: ${{ secrets.SITE_PASSWORD_1 }}
+          SITE_PIN_1: ${{ secrets.SITE_PIN_1 }}
+          SITE_ID_2: ${{ secrets.SITE_ID_2 }}
+          SITE_PASSWORD_2: ${{ secrets.SITE_PASSWORD_2 }}
+          SITE_PIN_2: ${{ secrets.SITE_PIN_2 }}
+
         run: python task.py
